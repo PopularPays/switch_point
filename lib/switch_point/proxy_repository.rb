@@ -6,10 +6,14 @@ module SwitchPoint
     include Singleton
 
     def self.checkout(name)
+      Rails.logger.error("[SwitchPoint] proxies on checkout: #{instance.proxies}")
+      Rails.logger.error("[SwitchPoint] checking out #{name}")
       instance.checkout(name)
     end
 
     def self.find(name)
+      Rails.logger.error("[SwitchPoint] proxies on find: #{instance.proxies}")
+      Rails.logger.error("[SwitchPoint] finding out #{name}")
       instance.find(name)
     end
 

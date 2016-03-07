@@ -39,6 +39,9 @@ module SwitchPoint
 
       def with_readonly(&block)
         if switch_point_proxy
+          Rails.logger.error("[SwitchPoint#with_readonly] proxy found. Proxy: #{switch_point_proxy.inspect}")
+          Rails.logger.error("[SwitchPoint#with_readonly] proxy connected?: #{switch_point_proxy.connected?}")
+          Rails.logger.error("[SwitchPoint#with_readonly] proxy connection: #{switch_point_proxy.connection.inspect}")
           switch_point_proxy.with_readonly(&block)
         else
           raise UnconfiguredError.new("#{name} isn't configured to use switch_point")

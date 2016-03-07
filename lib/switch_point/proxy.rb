@@ -11,6 +11,7 @@ module SwitchPoint
       @initial_name = name
       @current_name = name
       AVAILABLE_MODES.each do |mode|
+        Rails.logger.error("[SwitchPoint] Attempting to initalize a Proxy for #{name} and mode: #{mode}")
         model = define_model(name, mode)
         memorize_switch_point(name, mode, model.connection_pool)
       end
@@ -20,14 +21,19 @@ module SwitchPoint
     def define_model(name, mode)
       model_name = SwitchPoint.config.model_name(name, mode)
       if model_name
+        Rails.logger.error("[SwitchPoint] model name was found in the config. model_name: #{model_name}")
         model = Class.new(ActiveRecord::Base)
         Proxy.const_set(model_name, model)
-        model.establish_connection(SwitchPoint.config.database_name(name, mode))
+        Rails.logger.error("[SwitchPoint] about to establish connections for name: #{name} and mode: #{mode}")
+        pool = model.establish_connection(SwitchPoint.config.database_name(name, mode))
+        Rails.logger.error("[SwitchPoint] Connections established for name: #{name} and mode: #{mode}. ConnectionPool: #{pool}")
         model
       elsif mode == :readonly
+        Rails.logger.error("[SwitchPoint] name (#{name}) was not found, going with a readonly connection instead.")
         # Re-use writable connection
         Proxy.const_get(SwitchPoint.config.model_name(name, :writable))
       else
+        Rails.logger.error("[SwitchPoint] else block was reached")
         Class.new(ActiveRecord::Base)
       end
     end
@@ -35,6 +41,7 @@ module SwitchPoint
     def memorize_switch_point(name, mode, pool)
       switch_point = { name: name, mode: mode }
       if pool.equal?(ActiveRecord::Base.connection_pool)
+        Rails.logger.error("[SwitchPoint] using ActiveRecord::Base.connection_pool")
         if mode != :writable
           raise Error.new("ActiveRecord::Base's switch_points must be writable, but #{name} is #{mode}")
         end
@@ -42,8 +49,10 @@ module SwitchPoint
         switch_points << switch_point
         pool.spec.config[:switch_points] = switch_points
       elsif pool.spec.config.key?(:switch_point)
+        Rails.logger.error("[SwitchPoint] only writable was specified")
         # Only :writable is specified
       else
+        Rails.logger.error("[SwitchPoint] nothing was configured")
         pool.spec.config[:switch_point] = switch_point
       end
     end
